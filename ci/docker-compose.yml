@@ -76,7 +76,7 @@ services:
         do 
            sleep 5; 
         done;
-        bench new-site $SITE_NAME --db-host 192.168.10.5 --db-port 3306 --admin-password JrgGaKb1ss43 --db-root-username=root --db-root-password="$DB_ROOT_PASSWORD" --db-user hrmsprd --db-name hrmsprd --force; 
+        bench new-site $SITE_NAME --db-host 192.168.20.122 --db-port 3306 --admin-password admin@123 --db-root-username=root --db-root-password="$DB_ROOT_PASSWORD" --db-user indosoltm --db-name indosoltm --force; 
         echo "Site Created Successfully";
         bench use $SITE_NAME;
         bench --site $SITE_NAME install-app erpnext;
