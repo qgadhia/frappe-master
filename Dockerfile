@@ -124,6 +124,7 @@ RUN bench init --apps_path=/opt/frappe/apps.json \
       --skip-redis-config-generation \
     /home/frappe/frappe-bench && \
   cd /home/frappe/frappe-bench && \
+  bench set-mariadb-host hrmsprd && \
   bench set-redis-cache-host "${REDIS_CACHE}" && \
   bench set-redis-queue-host "${REDIS_QUEUE}" && \
   bench set-redis-socketio-host "${REDIS_SOCKETIO}" && \
