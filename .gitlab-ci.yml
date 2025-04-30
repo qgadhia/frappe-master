@@ -1,0 +1,57 @@
+#https://github.com/castlecraft/custom_containers/blob/main/.gitlab-ci.yml
+
+include: 
+  - project: 'devops/continuous-delivery/ci-templates'
+    file: '/Workflows/Frappe-Pipelines.gitlab-ci.yml'
+#   - project: 'devops/continuous-delivery/ci-templates'
+#     file: '/Base.gitlab-ci.yml'
+#   - project: 'devops/continuous-delivery/ci-templates'
+#     file: '/Release/Docker-v2.gitlab-ci.yml'
+#   - project: 'devops/continuous-delivery/ci-templates'
+#     file: '/Deploy/Helm-Chart-v2.gitlab-ci.yml'
+
+build_version:
+  stage: build
+  environment:
+    name: $DEPLOY_ENVIRONMENT
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - |
+      source ./ci/build.env
+      /kaniko/executor \
+        --dockerfile=$CI_PROJECT_DIR/Dockerfile \
+        --context=$CI_PROJECT_DIR \
+        --build-arg=FRAPPE_PATH=${FRAPPE_PATH:-${FRAPPE_REPO}} \
+        --build-arg=APPS=${APPS} \
+        --build-arg=REDIS_CACHE=${REDIS_CACHE} \
+        --build-arg=REDIS_QUEUE=${REDIS_QUEUE} \
+        --build-arg=REDIS_SOCKETIO=${REDIS_SOCKETIO} \
+        --build-arg=FRAPPE_BRANCH=${FRAPPE_BRANCH:-${FRAPPE_VERSION}} \
+        --build-arg=PYTHON_VERSION=${PYTHON_VERSION:-${PY_VERSION}} \
+        --build-arg=NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
+        --destination=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA \
+        --cache=false
+
+deploy_to_vm:
+  stage: deploy
+  image: harbor.pixelvide.cloud/docker/ubuntu:latest
+  before_script:
+    - apt update
+    - mkdir -p ~/.ssh
+    - apt install openssh-client -y
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo $SSH_PRIVATE_KEY | base64 -d > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh -i ~/.ssh/deploy_key -o "StrictHostKeyChecking=no" -o "PasswordAuthentication=no" indosoltm@$SERVER_NAME
+    - scp -i ~/.ssh/deploy_key ./ci/deploy.sh indosoltm@$SERVER_NAME:/home/indosoltm/cicd
+    - scp -i ~/.ssh/deploy_key ./ci/docker-compose.yml indosoltm@$SERVER_NAME:/home/indosoltm/cicd
+    - scp -i ~/.ssh/deploy_key ./ci/nginx.conf indosoltm@$SERVER_NAME:/home/indosoltm/cicd
+    - scp -i ~/.ssh/deploy_key ./ci/certs/* indosoltm@$SERVER_NAME:/home/indosoltm/cicd/certs/
+    - scp -i ~/.ssh/deploy_key ./ci/.env indosoltm@$SERVER_NAME:/home/indosoltm/cicd/
+  script:
+    - ssh -tt -i ~/.ssh/deploy_key indosoltm@$SERVER_NAME "export CI_COMMIT_SHA='${CI_COMMIT_SHA}'; export DOCKER_IMAGE_NAME='${DOCKER_IMAGE_NAME}'; export REDIS_CACHE='${REDIS_CACHE}'; export REDIS_QUEUE='${REDIS_QUEUE}'; export DB_HOST='${DB_HOST}'; export DB_PORT='${DB_PORT}'; export DB_NAME='${DB_NAME}'; export DB_USER='${DB_USER}'; export DB_PASSWORD='${DB_PASSWORD}'; export ADMIN_PASSWORD='${ADMIN_PASSWORD}'; export DB_ROOT_USERNAME='${DB_ROOT_USERNAME}'; export DB_ROOT_PASSWORD='${DB_ROOT_PASSWORD}'; export REDIS_SOCKETIO='${REDIS_SOCKETIO}'; export SITE_NAME='${SITE_NAME}'; export SSH_KNOWN_HOSTS='${SSH_KNOWN_HOSTS}'; export DOCKER_REGISTRY_URL='${DOCKER_REGISTRY_URL}'; /usr/bin/bash /home/indosoltm/cicd/deploy.sh"
+
+
