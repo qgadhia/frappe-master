@@ -1,6 +1,4 @@
-# Indosol Task Management
-
-
+### Indosol hrms
 
 ## Getting started
 
@@ -15,14 +13,14 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://gitlab.pixelvide.com/asakta/indosol-task-management.git
+git remote add origin https://gitlab.pixelvide.com/asakta/indosol-hrms.git
 git branch -M main
 git push -uf origin main
 ```
 
 ## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.pixelvide.com/asakta/indosol-task-management/-/settings/integrations)
+- [ ] [Set up project integrations](https://gitlab.pixelvide.com/asakta/indosol-hrms/-/settings/integrations)
 
 ## Collaborate with your team
 
