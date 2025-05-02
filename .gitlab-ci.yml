@@ -36,6 +36,8 @@ build_version:
 
 deploy_to_vm:
   stage: deploy
+  environment:
+    name: $DEPLOY_ENVIRONMENT
   image: harbor.pixelvide.cloud/docker/ubuntu:latest
   before_script:
     - apt update
