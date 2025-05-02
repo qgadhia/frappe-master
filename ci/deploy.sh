@@ -6,7 +6,7 @@ echo "[DEBUG] CI_COMMIT_SHA: ${CI_COMMIT_SHA:-missing}"
 echo "[DEBUG] DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-missing}"
 
 # Path setup
-APP_DIR="/home/hrmsdev/cicd"
+APP_DIR="/home/indosoltm/cicd"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
 aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
