@@ -36,6 +36,17 @@ build_version:
 
 deploy_to_vm:
   stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+      variables:
+        DEPLOY_ENVIRONMENT: staging
+    - if: '$CI_COMMIT_BRANCH == "pre-prod"'
+      variables:
+        DEPLOY_ENVIRONMENT: pre-prod
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      variables:
+        DEPLOY_ENVIRONMENT: production
+    - when: never
   environment:
     name: $DEPLOY_ENVIRONMENT
   image: harbor.pixelvide.cloud/docker/ubuntu:latest
