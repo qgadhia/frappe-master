@@ -77,6 +77,7 @@ services:
            sleep 5; 
         done;
         bench new-site $SITE_NAME --db-host 10.7.57.139 --db-port 3306 --admin-password 6smZkLlq23 --db-root-username root --db-root-password vgtN0l3twK233AEc --db-user indosoltm --db-name indosoltm --force; 
+        bench --site $SITE_NAME clear-cache;
         echo "Site Created Successfully";
         bench use $SITE_NAME;
         bench --site $SITE_NAME install-app erpnext;
