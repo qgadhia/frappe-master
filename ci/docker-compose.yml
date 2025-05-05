@@ -12,6 +12,8 @@ services:
     environment:
       DB_HOST: $DB_HOST
       DB_PORT: $DB_PORT
+    extra_hosts:
+        localhost: 172.17.0.1
 
   configurator:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
