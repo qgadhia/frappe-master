@@ -38,9 +38,9 @@ services:
     environment:
       DB_HOST: $DB_HOST
       DB_PORT: $DB_PORT
-      REDIS_CACHE: $REDIS_CACHE
-      REDIS_QUEUE: $REDIS_QUEUE
-      REDIS_SOCKETIO: $REDIS_SOCKETIO
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      REDIS_SOCKETIO: redis-cache:6379
       SOCKETIO_PORT: "9000"
     volumes:
       - sites:/home/frappe/frappe-bench/sites
@@ -78,19 +78,19 @@ services:
         do 
            sleep 5; 
         done;
-        bench new-site $SITE_NAME --db-host 10.7.57.139 --db-port 3306 --admin-password 6smZkLlq23 --db-root-username root --db-root-password vgtN0l3twK233AEc --db-user indosoltm --db-name indosoltm --db-password llY3brm9tVagmg5; 
+        bench new-site $SITE_NAME --db-host 10.7.57.139 --db-port 3306 --admin-password "ADMIN_PASSWORD" --db-root-username root --db-root-password "DB_ROOT_PASSWORD" --db-user indosoltm --db-name indosoltm --db-password "DB_PASSWORD"; 
         bench --site $SITE_NAME clear-cache;
         echo "Site Created Successfully";
         bench use $SITE_NAME;
         bench --site $SITE_NAME install-app erpnext;
-        echo "migration start";
+        bench --site $SITE_NAME install-app hrms;
+        echo "Migration Start";
         bench --site $SITE_NAME migrate;
-        echo "migration complete";
+        echo "Migration Complete";
         bench --site $SITE_NAME install-app whitelabel;
-        bench --site $SITE_NAME install-app frappe_s3_attachment;
-        echo "building for prod";
+        echo "Building for Production";
         bench build --production;
-        echo "build complete";
+        echo "Build Complete";
 
   frontend:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -191,6 +191,28 @@ services:
     ports:
       - "443:443"
 
+  redis-queue:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-queue-data:/data
+    ports:
+      - "11000:6379"
+
+  redis-cache:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "13000:6379"
+
 volumes:
   db-data:
   redis-queue-data:
@@ -201,3 +223,4 @@ volumes:
 networks:
   frappe_network:
     driver: bridge
+    name: frappe_network
