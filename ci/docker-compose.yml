@@ -83,7 +83,6 @@ services:
         echo "Site Created Successfully";
         bench use $SITE_NAME;
         bench --site $SITE_NAME install-app erpnext;
-        bench --site $SITE_NAME install-app hrms;
         echo "Migration Start";
         bench --site $SITE_NAME migrate;
         echo "Migration Complete";
