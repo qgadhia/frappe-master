@@ -110,10 +110,6 @@ RUN mkdir /opt/frappe && touch /opt/frappe/apps.json  && echo $APPS | base64 -d 
 
 USER frappe
 
-ARG REDIS_CACHE
-ARG REDIS_QUEUE
-ARG REDIS_SOCKETIO
-
 ARG FRAPPE_BRANCH=main
 ARG FRAPPE_PATH=https://gitlab.pixelvide.com/asakta/frappe-core.git
 RUN bench init --apps_path=/opt/frappe/apps.json \
@@ -124,9 +120,6 @@ RUN bench init --apps_path=/opt/frappe/apps.json \
       --skip-redis-config-generation \
     /home/frappe/frappe-bench && \
   cd /home/frappe/frappe-bench && \
-  bench set-redis-cache-host "${REDIS_CACHE}" && \
-  bench set-redis-queue-host "${REDIS_QUEUE}" && \
-  bench set-redis-socketio-host "${REDIS_SOCKETIO}" && \
   cat sites/common_site_config.json && \
   bench pip install captcha==0.7.1 && \
   bench pip install python-dotenv && \
