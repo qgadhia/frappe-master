@@ -3,12 +3,6 @@
 include: 
   - project: 'devops/continuous-delivery/ci-templates'
     file: '/Workflows/Frappe-Pipelines.gitlab-ci.yml'
-#   - project: 'devops/continuous-delivery/ci-templates'
-#     file: '/Base.gitlab-ci.yml'
-#   - project: 'devops/continuous-delivery/ci-templates'
-#     file: '/Release/Docker-v2.gitlab-ci.yml'
-#   - project: 'devops/continuous-delivery/ci-templates'
-#     file: '/Deploy/Helm-Chart-v2.gitlab-ci.yml'
 
 build_version:
   stage: build
