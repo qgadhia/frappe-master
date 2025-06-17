@@ -1,4 +1,4 @@
-FROM python:3.11.6-slim-bookworm AS base
+FROM python:3.10.18-slim-bookworm AS base
 
 COPY ci/nginx-template.conf /templates/nginx/frappe.conf.template
 COPY ci/nginx-entrypoint.sh /usr/local/bin/nginx-entrypoint.sh
@@ -13,6 +13,9 @@ ENV NVM_DIR=/home/frappe/.nvm
 ENV PATH=${NVM_DIR}/versions/node/v${NODE_VERSION}/bin/:${PATH}
 RUN useradd -ms /bin/bash frappe \
     && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -qqy tzdata \
+    && ln -fs /usr/share/zoneinfo/Asia/Calcutta /etc/localtime \
+    && dpkg-reconfigure -f noninteractive tzdata \
     && pip install wheel -q \
     && pip install --upgrade setuptools pip -q \
     && apt-get install --no-install-recommends -qqy \
@@ -110,8 +113,8 @@ RUN mkdir /opt/frappe && touch /opt/frappe/apps.json  && echo $APPS | base64 -d 
 
 USER frappe
 
-ARG FRAPPE_BRANCH=main
-ARG FRAPPE_PATH=https://gitlab.pixelvide.com/asakta/frappe-core.git
+ARG FRAPPE_BRANCH
+ARG FRAPPE_PATH
 RUN bench init --apps_path=/opt/frappe/apps.json \
       --frappe-branch=${FRAPPE_BRANCH} \
       --frappe-path=${FRAPPE_PATH} \
@@ -123,7 +126,6 @@ RUN bench init --apps_path=/opt/frappe/apps.json \
   cat sites/common_site_config.json && \
   bench pip install captcha==0.7.1 && \
   bench pip install python-dotenv && \
-  find apps -mindepth 1 -path "*/.git" | xargs rm -fr && \
   echo "captcha_enabled=0\ncaptcha_secret_key=6LdoxOAqAAAAAGDUQcWSucEP7v8ibE6M17TvPzqx\ncaptcha_site_key=6LdoxOAqAAAAAEyrsvTSSPtoWutlInojb37CmDhc" > /home/frappe/frappe-bench/apps/frappe/.env
   
 FROM base AS backend
@@ -136,11 +138,16 @@ WORKDIR /home/frappe/frappe-bench
 
 VOLUME [ \
   "/home/frappe/frappe-bench/sites", \
+  "/home/frappe/frappe-bench/apps", \
+  "/home/frappe/frappe-bench/env", \
+  "/home/frappe/frappe-bench/config", \
   "/home/frappe/frappe-bench/sites/assets", \
   "/home/frappe/frappe-bench/logs" \
 ]
 
 CMD [ \
+  "env", \
+  "PYTHONPATH=/home/frappe/frappe-bench/apps", \
   "/home/frappe/frappe-bench/env/bin/gunicorn", \
   "--chdir=/home/frappe/frappe-bench/sites", \
   "--bind=0.0.0.0:8000", \
