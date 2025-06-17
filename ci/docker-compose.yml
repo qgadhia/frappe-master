@@ -9,11 +9,21 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
     environment:
       DB_HOST: $DB_HOST
       DB_PORT: $DB_PORT
-    extra_hosts:
-        localhost: 172.17.0.1
+    command:
+      - bash
+      - -c
+      - >
+        bench build --production &&
+        env PYTHONPATH=/home/frappe/frappe-bench/apps /home/frappe/frappe-bench/env/bin/gunicorn --chdir=/home/frappe/frappe-bench/sites --bind=0.0.0.0:8000 --threads=4 --workers=2 --worker-class=gthread --worker-tmp-dir=/dev/shm --timeout=120 --preload frappe.app:application
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
 
   configurator:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -34,6 +44,7 @@ services:
         bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
         bench set-config -g redis_socketio "redis://$$REDIS_SOCKETIO";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
+        bench set-config -g developer_mode 1;
         echo "bench configured";
     environment:
       DB_HOST: $DB_HOST
@@ -45,6 +56,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
 
   create-site:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -56,6 +70,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
     entrypoint:
       - bash
       - -c
@@ -76,17 +93,25 @@ services:
               [[ -n $(grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty") ]] && 
               [[ -n $(grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty") ]]; 
         do 
-           sleep 5; 
+           sleep 5;
         done;
-        bench new-site $SITE_NAME --db-host 10.7.57.139 --db-port 3306 --admin-password 6smZkLlq23 --db-root-username root --db-root-password vgtN0l3twK233AEc --db-user indosoltm --db-name indosoltm --db-password llY3brm9tVagmg5; 
-        bench --site $SITE_NAME clear-cache;
+        bench get-app https://rehman:b4Gmeko9b4eRgHp6ebFn@gitlab.pixelvide.com/asakta/project-management.git --branch main;
+        bench new-site $SITE_NAME --db-host 10.7.57.139 --admin-password="$ADMIN_PASSWORD" --db-root-password="$DB_ROOT_PASSWORD" --db-user=indosoltm --db-name=indosoltm --db-password="$DB_PASSWORD";
         echo "Site Created Successfully";
+        bench --site $SITE_NAME clear-cache;
         bench use $SITE_NAME;
+        cd apps/frappe;
+        git pull;
+        cd ../erpnext;
+        git pull;
+        cd ../whitelabel;
+        git pull;
         bench --site $SITE_NAME install-app erpnext;
+        bench --site $SITE_NAME install-app whitelabel;
+        bench --site $SITE_NAME clear-cache;
         echo "Migration Start";
         bench --site $SITE_NAME migrate;
         echo "Migration Complete";
-        bench --site $SITE_NAME install-app whitelabel;
         echo "Building for Production";
         bench build --production;
         echo "Build Complete";
@@ -114,6 +139,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
     ports:
       - "8080:8080"
 
@@ -132,6 +160,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
 
   queue-short:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -148,6 +179,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
 
   scheduler:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -162,6 +196,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
 
   websocket:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -176,19 +213,9 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
-
-  nginx:
-    image: nginx:latest
-    depends_on:
-      - frontend
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem
-      - ./certs/privkey.pem:/etc/nginx/certs/privkey.pem
-    networks:
-      - frappe_network
-    ports:
-      - "443:443"
+      - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
+      - config:/home/frappe/frappe-bench/config
 
   redis-queue:
     image: redis:6.2-alpine
@@ -197,8 +224,6 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-    volumes:
-      - redis-queue-data:/data
     ports:
       - "11000:6379"
 
@@ -214,10 +239,12 @@ services:
 
 volumes:
   db-data:
-  redis-queue-data:
   sites:
   logs:
   ssh:
+  apps:
+  env:
+  config:
 
 networks:
   frappe_network:
