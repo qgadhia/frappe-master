@@ -34,6 +34,8 @@ build_version:
 deploy_to_vm:
   stage: deploy
   image: harbor.pixelvide.cloud/docker/ubuntu:latest
+  environment:
+    name: $DEPLOY_ENVIRONMENT
   before_script:
     - apt update
     - mkdir -p ~/.ssh
