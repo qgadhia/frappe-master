@@ -95,7 +95,6 @@ services:
         do 
            sleep 5;
         done;
-        bench get-app https://rehman:b4Gmeko9b4eRgHp6ebFn@gitlab.pixelvide.com/asakta/project-management.git --branch main;
         bench new-site $SITE_NAME --db-host 10.7.57.139 --admin-password="$ADMIN_PASSWORD" --db-root-password="$DB_ROOT_PASSWORD" --db-user=indosoltm --db-name=indosoltm --db-password="$DB_PASSWORD";
         echo "Site Created Successfully";
         bench --site $SITE_NAME clear-cache;
