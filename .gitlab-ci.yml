@@ -28,7 +28,7 @@ build_version:
         --build-arg=NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
         --build-arg=VM_USER=${VM_USER} \
         --destination=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA \
-        --cache=true \
+        --cache=false \
         --cache-repo=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME/cache
 
 deploy_to_vm:
