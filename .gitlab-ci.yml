@@ -29,7 +29,7 @@ build_version:
         --build-arg=VM_USER=${VM_USER} \
         --destination=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA \
         --cache=true \
-        --cache-repo=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME/cache
+        --cache-repo=800974621602.dkr.ecr.ap-south-1.amazonaws.com/smis/dev/hrms/cache
 
 deploy_to_vm:
   stage: deploy
