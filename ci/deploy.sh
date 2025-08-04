@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-source /home/indosoltm/cicd/build.env
+source /home/XXXXX/cicd/build.env
 
 echo "[DEBUG] CI_COMMIT_SHA: ${CI_COMMIT_SHA:-missing}"
 echo "[DEBUG] DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-missing}"
