@@ -7,7 +7,7 @@ RUN sed -i 's/\r$//' /templates/nginx/frappe.conf.template
 
 ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 ARG WKHTMLTOPDF_DISTRO=bookworm
-ARG NODE_VERSION=18.18.2
+ARG NODE_VERSION
 ARG APPS
 ENV NVM_DIR=/home/frappe/.nvm
 ENV PATH=${NVM_DIR}/versions/node/v${NODE_VERSION}/bin/:${PATH}
