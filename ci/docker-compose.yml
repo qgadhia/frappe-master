@@ -3,9 +3,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -15,15 +13,25 @@ services:
     environment:
       DB_HOST: $DB_HOST
       DB_PORT: $DB_PORT
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     command:
       - bash
       - -c
       - >
-        bench build --production &&
-        env PYTHONPATH=/home/frappe/frappe-bench/apps /home/frappe/frappe-bench/env/bin/gunicorn --chdir=/home/frappe/frappe-bench/sites --bind=0.0.0.0:8000 --threads=4 --workers=2 --worker-class=gthread --worker-tmp-dir=/dev/shm --timeout=120 --preload frappe.app:application
+        ( bench build --production && env PYTHONPATH=/home/frappe/frappe-bench/apps /home/frappe/frappe-bench/env/bin/gunicorn --chdir=/home/frappe/frappe-bench/sites --bind=0.0.0.0:8000 --threads=4 --workers=2 --worker-class=gthread --worker-tmp-dir=/dev/shm --timeout=120 --preload frappe.app:application ) > >(tee -a /home/frappe/frappe-bench/logs/gunicorn.log) 2>&1
     depends_on:
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
       create-site:
         condition: service_completed_successfully
+    extra_hosts:
+        localhost: 172.17.0.1
 
   configurator:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -45,6 +53,7 @@ services:
         bench set-config -g redis_socketio "redis://$$REDIS_SOCKETIO";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
         bench set-config -g developer_mode 1;
+        bench set-config -g server_script_enabled 1;
         echo "bench configured";
     environment:
       DB_HOST: $DB_HOST
@@ -67,6 +76,11 @@ services:
     deploy:
       restart_policy:
         condition: none
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -88,7 +102,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     command: 
       - >
-        export start=$(date +%s);
+        ( export start=$(date +%s);
         until [[ -n $(grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty") ]] && 
               [[ -n $(grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty") ]] && 
               [[ -n $(grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty") ]]; 
@@ -113,7 +127,7 @@ services:
         echo "Migration Complete";
         echo "Building for Production";
         bench build --production;
-        echo "Build Complete";
+        echo "Build Complete";  ) > >(tee -a /home/frappe/frappe-bench/logs/create-site.log) 2>&1
 
   frontend:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
@@ -216,25 +230,37 @@ services:
       - env:/home/frappe/frappe-bench/env
       - config:/home/frappe/frappe-bench/config
 
-  redis-queue:
-    image: redis:6.2-alpine
-    networks:
-      - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "11000:6379"
-
   redis-cache:
     image: redis:6.2-alpine
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
+    volumes:
+      - logs:/home/frappe/frappe-bench/logs
     ports:
       - "13000:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: sh -c "redis-server --loglevel verbose | tee -a /home/frappe/frappe-bench/logs/redis-cache.log"
+  
+  redis-queue:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    restart: always
+    volumes:
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "11000:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: sh -c "redis-server --loglevel verbose | tee -a /home/frappe/frappe-bench/logs/redis-queue.log"
 
 volumes:
   db-data:
