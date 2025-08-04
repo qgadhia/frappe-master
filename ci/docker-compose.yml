@@ -37,9 +37,6 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: none
     entrypoint:
       - bash
       - -c
@@ -73,9 +70,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: none
+    restart: always
     logging:
       driver: json-file
       options:
@@ -134,10 +129,11 @@ services:
     networks:
       - frappe_network
     depends_on:
-      - websocket
-    deploy:
-      restart_policy:
-        condition: on-failure
+      frontend:
+        condition: service_healthy
+      websocket:
+        condition: service_healthy
+    restart: always
     command:
       - nginx-entrypoint.sh
     environment:
@@ -162,9 +158,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
     command:
       - bench
       - worker
@@ -181,9 +175,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
     command:
       - bench
       - worker
@@ -200,9 +192,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
     command:
       - bench
       - schedule
@@ -217,9 +207,7 @@ services:
     image: $DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     networks:
       - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: always
     command:
       - node
       - /home/frappe/frappe-bench/apps/frappe/socketio.js
