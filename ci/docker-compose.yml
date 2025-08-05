@@ -132,7 +132,6 @@ services:
       frontend:
         condition: service_healthy
       websocket:
-        condition: service_healthy
     restart: always
     command:
       - nginx-entrypoint.sh
