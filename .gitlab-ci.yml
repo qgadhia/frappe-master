@@ -12,6 +12,7 @@ build_version:
   cache:
     paths:
       - vendor/
+      - ./context/
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
@@ -36,6 +37,11 @@ deploy_to_vm:
   image: harbor.pixelvide.cloud/docker/ubuntu:latest
   environment:
     name: $DEPLOY_ENVIRONMENT
+  cache:
+    key: apt-cache
+    paths:
+      - .apt/cache
+      - .apt/lists
   before_script:
     - apt update
     - mkdir -p ~/.ssh
