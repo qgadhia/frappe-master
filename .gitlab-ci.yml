@@ -10,6 +10,11 @@ build_on_vm:
   image: harbor.pixelvide.cloud/docker/ubuntu:24.04
   environment:
     name: $DEPLOY_ENVIRONMENT
+  cache:
+    key: apt-cache
+    paths:
+      - .apt/cache
+      - .apt/lists
   before_script:
     - source ./ci/build.env
     - apt update
