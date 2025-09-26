@@ -5,36 +5,48 @@ include:
     file: '/Workflows/Frappe-Pipelines.gitlab-ci.yml'
 
 
-build_version:
+build_on_vm:
   stage: build
+  image: harbor.pixelvide.cloud/docker/ubuntu:24.04
   environment:
     name: $DEPLOY_ENVIRONMENT
-  cache:
-    paths:
-      - vendor/
-      - ./context/
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
+  before_script:
+    - source ./ci/build.env
+    - apt update
+    - mkdir -p ~/.ssh
+    - apt install -y openssh-client
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo $SSH_PRIVATE_KEY | base64 -d > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh -i ~/.ssh/deploy_key -o "StrictHostKeyChecking=no" $VM_USER@$SERVER_NAME "mkdir -p /home/$VM_USER/cicd"
+    - scp -i ~/.ssh/deploy_key -r ./* $VM_USER@$SERVER_NAME:/home/$VM_USER/cicd
   script:
     - |
-      source ./ci/build.env
-      /kaniko/executor \
-        --dockerfile=$CI_PROJECT_DIR/Dockerfile \
-        --context=$CI_PROJECT_DIR \
-        --build-arg=FRAPPE_PATH=${FRAPPE_PATH:-${FRAPPE_REPO}} \
-        --build-arg=APPS=${APPS} \
-        --build-arg=FRAPPE_BRANCH=${FRAPPE_BRANCH:-${FRAPPE_VERSION}} \
-        --build-arg=PYTHON_VERSION=${PYTHON_VERSION:-${PY_VERSION}} \
-        --build-arg=NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
-        --build-arg=VM_USER=${VM_USER} \
-        --destination=$DOCKER_REGISTRY_URL/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA \
-        --cache=true \
-        --cache-repo=800974621602.dkr.ecr.ap-south-1.amazonaws.com/smis/dev/hrms/cache
+      ssh -tt -i ~/.ssh/deploy_key $VM_USER@$SERVER_NAME "
+        set -e
+        cd /home/$VM_USER/cicd
+        source ./ci/build.env
+
+        echo '--- Building Docker image on VM ---'
+        docker build \
+          --file Dockerfile \
+          --build-arg FRAPPE_PATH=${FRAPPE_PATH:-${FRAPPE_REPO}} \
+          --build-arg APPS=${APPS} \
+          --build-arg FRAPPE_BRANCH=${FRAPPE_BRANCH:-${FRAPPE_VERSION}} \
+          --build-arg PYTHON_VERSION=${PYTHON_VERSION:-${PY_VERSION}} \
+          --build-arg NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
+          --build-arg VM_USER=${VM_USER} \
+          -t cicd:$CI_COMMIT_SHA \
+          .
+        
+        echo '--- Build complete ---'
+      "
+
 
 deploy_to_vm:
   stage: deploy
-  image: harbor.pixelvide.cloud/docker/ubuntu:latest
+  image: harbor.pixelvide.cloud/docker/ubuntu:24.04
   environment:
     name: $DEPLOY_ENVIRONMENT
   cache:
@@ -55,4 +67,4 @@ deploy_to_vm:
     - scp -i ~/.ssh/deploy_key ./ci/deploy.sh $VM_USER@$SERVER_NAME:/home/$VM_USER/cicd
     - scp -i ~/.ssh/deploy_key ./ci/docker-compose.yml $VM_USER@$SERVER_NAME:/home/$VM_USER/cicd
   script:
-    - ssh -tt -i ~/.ssh/deploy_key $VM_USER@$SERVER_NAME "source /home/$VM_USER/cicd/build.env; export VM_USER='${VM_USER}'; export CI_COMMIT_SHA='${CI_COMMIT_SHA}'; export DOCKER_IMAGE_NAME='${DOCKER_IMAGE_NAME}'; export DB_HOST='${DB_HOST}'; export DB_PORT='${DB_PORT}'; export DB_NAME='${DB_NAME}'; export DB_USER='${DB_USER}'; export DB_PASSWORD='${DB_PASSWORD}'; export ADMIN_PASSWORD='${ADMIN_PASSWORD}'; export DB_ROOT_USERNAME='${DB_ROOT_USERNAME}'; export DB_ROOT_PASSWORD='${DB_ROOT_PASSWORD}'; export SITE_NAME='${SITE_NAME}'; export SSH_KNOWN_HOSTS='${SSH_KNOWN_HOSTS}'; export DOCKER_REGISTRY_URL='${DOCKER_REGISTRY_URL}'; /usr/bin/bash /home/$VM_USER/cicd/deploy.sh"
+    - ssh -i ~/.ssh/deploy_key $VM_USER@$SERVER_NAME "source /home/$VM_USER/cicd/build.env; export VM_USER='${VM_USER}'; export CI_COMMIT_SHA='${CI_COMMIT_SHA}'; export DB_HOST='${DB_HOST}'; export DB_PORT='${DB_PORT}'; export DB_NAME='${DB_NAME}'; export DB_USER='${DB_USER}'; export DB_PASSWORD='${DB_PASSWORD}'; export ADMIN_PASSWORD='${ADMIN_PASSWORD}'; export DB_ROOT_USERNAME='${DB_ROOT_USERNAME}'; export DB_ROOT_PASSWORD='${DB_ROOT_PASSWORD}'; export SITE_NAME='${SITE_NAME}'; export SSH_KNOWN_HOSTS='${SSH_KNOWN_HOSTS}'; export DOCKER_REGISTRY_URL='${DOCKER_REGISTRY_URL}'; export GIS_USER='${GIS_USER}'; export GIS_PASSWORD='${GIS_PASSWORD}'; export GIS_BASE_URL='${GIS_BASE_URL}'; /usr/bin/bash /home/$VM_USER/cicd/deploy.sh"
