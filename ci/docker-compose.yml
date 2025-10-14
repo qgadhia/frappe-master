@@ -7,6 +7,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - assets:/home/frappe/frappe-bench/sites/assets
       - apps:/home/frappe/frappe-bench/apps
       - env:/home/frappe/frappe-bench/env
       - config:/home/frappe/frappe-bench/config
@@ -83,6 +84,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - assets:/home/frappe/frappe-bench/sites/assets
       - assets:/home/frappe/frappe-bench/sites/assets
       - apps:/home/frappe/frappe-bench/apps
     entrypoint:
@@ -270,6 +272,7 @@ services:
 volumes:
   sites:
   config:
+  assets:
   logs:
   ssh:
   apps:
