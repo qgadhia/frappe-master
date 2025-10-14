@@ -2,11 +2,11 @@
 
 [
     {
-      "url": "https://qasim:6Exy3Wr6UbxVkL-AYS4L@gitlab.pixelvide.com/asakta/whitelabel.git",
+      "url": "https://gitlab.pixelvide.com/asakta/whitelabel.git",
       "branch": "main"
     },
     {
-      "url": "https://qasim:6Exy3Wr6UbxVkL-AYS4L@gitlab.pixelvide.com/smart-meter/frappe_s3_attachment.git",
+      "url": "https://gitlab.pixelvide.com/smart-meter/frappe_s3_attachment.git",
       "branch": "main"
     }
 ]
