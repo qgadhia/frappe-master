@@ -43,7 +43,7 @@ build_on_vm:
           --build-arg NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
           --build-arg VM_USER=${VM_USER} \
           -t frappe:$CI_COMMIT_SHA \
-          .
+          .ci
         
         echo '--- Build complete ---'
       "
