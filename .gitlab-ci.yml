@@ -42,7 +42,7 @@ build_on_vm:
           --build-arg PYTHON_VERSION=${PYTHON_VERSION:-${PY_VERSION}} \
           --build-arg NODE_VERSION=${NODE_VERSION:-${NODEJS_VERSION}} \
           --build-arg VM_USER=${VM_USER} \
-          -t survey:$CI_COMMIT_SHA \
+          -t frappe:$CI_COMMIT_SHA \
           .
         
         echo '--- Build complete ---'
