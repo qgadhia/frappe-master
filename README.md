@@ -1,6 +1,6 @@
 Variable included in cicd vars:::
 
-APPS ::: 
+Example APPS variable which is added in CICD Vars after base64 encoded ::: 
 
 [
   {
@@ -25,6 +25,8 @@ APPS :::
   }
 ]
 
+#Variables defined in Gitlab CICD
+
 ADMIN_PASSWORD
 DB_HOST
 DB_PASSWORD
@@ -37,10 +39,11 @@ DEPLOYMENT_NAME
 
 issues in current deployments:::
 
-managing storage in the vm due to docker 
+Base Image Size
 
-docker image size (2.5gb to 3.00 gb)
+Docker Volume Management
+a. Size of volumes
+b. Stale data in volumes
+c. Data loss on volume deletion
 
-docker error related to volumes and container while redeploying(docker deamon):::
-
-docker volume management
+Encryption Key Issues
